@@ -1,0 +1,3 @@
+tabulate
+flask
+flask_restful
