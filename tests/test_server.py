@@ -18,7 +18,6 @@ def test_empty_db(db_path):
     client = create_app(db_path).test_client()
     response = client.get('/')
     assert response.status_code == 200
-    assert response.data == b'Badend Server'
 
 
 def test_get_one_resource(db_path):

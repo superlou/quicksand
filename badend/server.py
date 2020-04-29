@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import flask
 from flask import Flask, Response, make_response, request
 from flask_restful import Api, Resource
 import json
@@ -101,6 +102,23 @@ def format_resource_object(record, resource, url_root):
     }
 
 
+def format_url_map(url_map):
+    rules = list(url_map.iter_rules())
+    rules= sorted(rules, key=lambda rule: str(rule))
+
+    html = '<ul>'
+
+    for rule in rules:
+        methods = ', '.join(list(rule.methods))
+        path = flask.escape(rule.rule)
+        html += f'<li>{path} - {methods}</li>'
+        print(rule, list(rule.methods))
+
+    html += '</ul>'
+
+    return html
+
+
 def create_app(database='app.db'):
     app = Flask(__name__)
     app.config['DATABASE'] = database
@@ -109,7 +127,7 @@ def create_app(database='app.db'):
 
     @app.route('/')
     def index():
-        return 'Badend Server'
+        return '<h1>Quicksand Server</h1>\n' + format_url_map(app.url_map)
 
     for name in Db(app.config['DATABASE']).table_names:
         klass = type(f'HandlerList{name}', (Resource,), {
