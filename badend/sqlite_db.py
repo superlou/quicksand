@@ -27,9 +27,9 @@ class SqliteDb:
         with open(filename) as script_file:
             self.cursor.executescript(script_file.read())
 
-    def insert_into(self, table, data):
-        columns = ','.join(data.keys())
-        values = tuple(data.values())
+    def insert_into(self, table, attributes):
+        columns = ','.join(attributes.keys())
+        values = tuple(attributes.values())
         templates = ','.join('?' * len(values))
 
         sql = f'INSERT INTO {table} ({columns}) VALUES ({templates});'
@@ -39,6 +39,16 @@ class SqliteDb:
         # lastrowid is the id of the last row inserted into for that cursor
         # only. Another cursor will have a different lastrowid.
         return self.cursor.lastrowid
+
+    def update_by_id(self, table, id, attributes):
+        columns = ','.join([key + '=?' for key in attributes.keys()])
+        values = list(attributes.values())
+        templates = ','.join('?' * len(values))
+
+        sql = f'UPDATE {table} SET {columns} WHERE id=?;'
+        print(sql)
+        self.execute(sql, values + [id])
+        self.commit()
 
     def find_all(self, table):
         sql = f'SELECT * FROM {table}'

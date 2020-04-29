@@ -155,3 +155,31 @@ def test_delete_resource(db_path):
     response = client.get('/api/parts')
     assert len(response.get_json(force=True)['data']) == 1
     assert response.get_json(force=True)['data'][0]['id'] == 2
+
+
+def test_update_resource(db_path):
+    Db(db_path).execute_script('tests/sql/basic.sql')
+    client = create_app(db_path).test_client()
+
+    response = client.patch('/api/parts/1', json={
+        'data': {
+            'type': 'parts',
+            'id': 1,
+            'attributes': {
+                'desc': 'changed',
+            }
+        }
+    })
+
+    assert response.status_code == 204
+
+    # Make sure that we've changed only the desired record
+    response = client.get('/api/parts/1')
+    data = response.get_json(force=True)['data']
+    assert data['attributes']['name'] == 'part1'
+    assert data['attributes']['desc'] == 'changed'
+
+    response = client.get('/api/parts/2')
+    data = response.get_json(force=True)['data']
+    assert data['attributes']['name'] == 'part2'
+    assert data['attributes']['desc'] == 'another description'

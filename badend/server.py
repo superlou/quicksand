@@ -43,7 +43,6 @@ def fetch_resource(self, id):
 def create_resource(self):
     resource = self.__class__.resource
     db = Db(self.__class__.app.config['DATABASE'])
-
     id = db.insert_into(resource, request.get_json()['data']['attributes'])
 
     result = db.find_by_id(resource, id)
@@ -57,6 +56,13 @@ def delete_resource(self, id):
     resource = self.__class__.resource
     db = Db(self.__class__.app.config['DATABASE'])
     db.delete_by_id(resource, id)
+    return None, 204
+
+
+def update_resource(self, id):
+    resource = self.__class__.resource
+    db = Db(self.__class__.app.config['DATABASE'])
+    db.update_by_id(resource, id, request.get_json()['data']['attributes'])
     return None, 204
 
 
@@ -118,6 +124,7 @@ def create_app(database='app.db'):
         klass = type(f'HandlerSingle{name}', (Resource,), {
             'get':  fetch_resource,
             'delete': delete_resource,
+            'patch': update_resource,
             'resource': name,
             'app': app,
         })
