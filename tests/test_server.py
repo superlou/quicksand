@@ -110,35 +110,35 @@ def test_get_all(db_path):
 def test_create_resource(db_path):
     Db(db_path).execute_script('tests/sql/basic.sql')
     app = create_app(db_path)
-    with app.test_client() as client:
-        response = client.get('/api/parts')
-        assert len(response.get_json(force=True)['data']) == 2
+    client = app.test_client()
+    response = client.get('/api/parts')
+    assert len(response.get_json(force=True)['data']) == 2
 
-        response = client.post('/api/parts', json={
-            'data': {
-                'type': 'parts',
-                'attributes': {
-                    'name': 'Just',
-                    'desc': 'Created',
-                }
-            }
-        })
-
-        assert response.headers['Content-Type'] == 'application/vnd.api+json'
-        assert response.status_code == 201
-        assert response.get_json(force=True) == {
-            'data': {
-                'type': 'parts',
-                'id': 3,
-                'attributes': {
-                    'name': 'Just',
-                    'desc': 'Created',
-                },
-                'links': {
-                    'self': 'http://localhost/api/parts/3'
-                }
+    response = client.post('/api/parts', json={
+        'data': {
+            'type': 'parts',
+            'attributes': {
+                'name': 'Just',
+                'desc': 'Created',
             }
         }
+    })
 
-        response = client.get('/api/parts')
-        assert len(response.get_json(force=True)['data']) == 3
+    assert response.headers['Content-Type'] == 'application/vnd.api+json'
+    assert response.status_code == 201
+    assert response.get_json(force=True) == {
+        'data': {
+            'type': 'parts',
+            'id': 3,
+            'attributes': {
+                'name': 'Just',
+                'desc': 'Created',
+            },
+            'links': {
+                'self': 'http://localhost/api/parts/3'
+            }
+        }
+    }
+
+    response = client.get('/api/parts')
+    assert len(response.get_json(force=True)['data']) == 3
