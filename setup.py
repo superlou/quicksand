@@ -4,7 +4,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name="badend",
+    name="quicksand",
     version="0.1.0",
     license="GPLv3",
     description="Who cares about servers",

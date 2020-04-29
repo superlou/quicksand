@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from badend import create_app, Db
+from quicksand import create_app, Db
 
 
 @pytest.fixture

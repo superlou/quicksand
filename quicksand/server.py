@@ -75,7 +75,6 @@ def find_related(resource, id, db):
 
     for table in tables:
         for row in db.get_table_info(table):
-            print(row['name'])
             if row['name'] == foreign_key_column:
                 related.append(table)
 
@@ -104,7 +103,7 @@ def format_resource_object(record, resource, url_root):
 
 def format_url_map(url_map):
     rules = list(url_map.iter_rules())
-    rules= sorted(rules, key=lambda rule: str(rule))
+    rules = sorted(rules, key=lambda rule: str(rule))
 
     html = '<ul>'
 
@@ -112,7 +111,6 @@ def format_url_map(url_map):
         methods = ', '.join(list(rule.methods))
         path = flask.escape(rule.rule)
         html += f'<li>{path} - {methods}</li>'
-        print(rule, list(rule.methods))
 
     html += '</ul>'
 
