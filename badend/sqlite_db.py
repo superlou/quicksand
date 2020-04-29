@@ -37,6 +37,11 @@ class SqliteDb:
         # only. Another cursor will have a different lastrowid.
         return self.cursor.lastrowid
 
+    def delete_by_id(self, table, id):
+        sql = f'DELETE from {table} WHERE id=?;'
+        self.cursor.execute(sql, [id])
+        self.commit()
+
     @property
     def table_names(self):
         sql = "SELECT name FROM sqlite_master WHERE type='table';"

@@ -60,6 +60,13 @@ def create_resource(self):
     return response
 
 
+def delete_resource(self, id):
+    resource = self.__class__.resource
+    db = Db(self.__class__.app.config['DATABASE'])
+    db.delete_by_id(resource, id)
+    return None, 204
+
+
 def find_related(resource, id, db):
     foreign_key_column = resource + '_id'
     tables = db.table_names
@@ -117,6 +124,7 @@ def create_app(database='app.db'):
 
         klass = type(f'HandlerSingle{name}', (Resource,), {
             'get':  fetch_resource,
+            'delete': delete_resource,
             'resource': name,
             'app': app,
         })

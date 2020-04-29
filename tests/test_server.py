@@ -109,8 +109,7 @@ def test_get_all(db_path):
 
 def test_create_resource(db_path):
     Db(db_path).execute_script('tests/sql/basic.sql')
-    app = create_app(db_path)
-    client = app.test_client()
+    client = create_app(db_path).test_client()
     response = client.get('/api/parts')
     assert len(response.get_json(force=True)['data']) == 2
 
@@ -142,3 +141,17 @@ def test_create_resource(db_path):
 
     response = client.get('/api/parts')
     assert len(response.get_json(force=True)['data']) == 3
+
+
+def test_delete_resource(db_path):
+    Db(db_path).execute_script('tests/sql/basic.sql')
+    client = create_app(db_path).test_client()
+    response = client.get('/api/parts')
+    assert len(response.get_json(force=True)['data']) == 2
+
+    response = client.delete('/api/parts/1')
+    assert response.status_code == 204
+
+    response = client.get('/api/parts')
+    assert len(response.get_json(force=True)['data']) == 1
+    assert response.get_json(force=True)['data'][0]['id'] == 2
