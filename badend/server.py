@@ -9,12 +9,8 @@ def fetch_resources(self):
     resource = self.__class__.resource
     db = Db(self.__class__.app.config['DATABASE'])
 
-    data = []
-
-    sql = f'SELECT * FROM {resource}'
-
-    for record in db.execute(sql).fetchall():
-        data.append(format_resource_object(record, resource, request.url_root)['data'])
+    data = [format_resource_object(record, resource, request.url_root)['data']
+            for record in db.find_all(resource)]
 
     response = make_response({
         'data': data
@@ -26,8 +22,7 @@ def fetch_resources(self):
 def fetch_resource(self, id):
     resource = self.__class__.resource
     db = Db(self.__class__.app.config['DATABASE'])
-    sql = f'SELECT * FROM {resource} WHERE id={id}'
-    result = db.execute(sql).fetchone()
+    result = db.find_by_id(resource, id)
 
     if result is None:
         response = make_response({
@@ -51,9 +46,7 @@ def create_resource(self):
 
     id = db.insert_into(resource, request.get_json()['data']['attributes'])
 
-    sql = f'SELECT * FROM {resource} WHERE id={id}'
-    result = db.execute(sql).fetchone()
-
+    result = db.find_by_id(resource, id)
     response = make_response(format_resource_object(result, resource, request.url_root))
     response.status_code = 201
     response.headers['Content-Type'] = 'application/vnd.api+json'

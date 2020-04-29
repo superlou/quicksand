@@ -17,8 +17,11 @@ class SqliteDb:
         self.commit()
         self.conn.close()
 
-    def execute(self, sql):
-        return self.cursor.execute(sql)
+    def execute(self, sql, parameters=None):
+        if parameters is None:
+            parameters = []
+
+        return self.cursor.execute(sql, parameters)
 
     def execute_script(self, filename):
         with open(filename) as script_file:
@@ -30,16 +33,26 @@ class SqliteDb:
         templates = ','.join('?' * len(values))
 
         sql = f'INSERT INTO {table} ({columns}) VALUES ({templates});'
-        self.cursor.execute(sql, values)
+        self.execute(sql, values)
         self.commit()
 
         # lastrowid is the id of the last row inserted into for that cursor
         # only. Another cursor will have a different lastrowid.
         return self.cursor.lastrowid
 
+    def find_all(self, table):
+        sql = f'SELECT * FROM {table}'
+        records = self.execute(sql).fetchall()
+        return records
+
+    def find_by_id(self, table, id):
+        sql = f'SELECT * FROM {table} WHERE id=?'
+        record = self.execute(sql, [id]).fetchone()
+        return record
+
     def delete_by_id(self, table, id):
         sql = f'DELETE from {table} WHERE id=?;'
-        self.cursor.execute(sql, [id])
+        self.execute(sql, [id])
         self.commit()
 
     @property
