@@ -5,7 +5,7 @@ import json
 from .sqlite_db import SqliteDb as Db
 
 
-def get_all_handler(self):
+def fetch_resources(self):
     resource = self.__class__.resource
     db = Db(self.__class__.app.config['DATABASE'])
 
@@ -23,7 +23,7 @@ def get_all_handler(self):
     return response
 
 
-def get_one_handler(self, id):
+def fetch_resource(self, id):
     resource = self.__class__.resource
     db = Db(self.__class__.app.config['DATABASE'])
     sql = f'SELECT * FROM {resource} WHERE id={id}'
@@ -107,7 +107,7 @@ def create_app(database='app.db'):
 
     for name in Db(app.config['DATABASE']).table_names:
         klass = type(f'HandlerList{name}', (Resource,), {
-            'get': get_all_handler,
+            'get': fetch_resources,
             'post': create_resource,
             'resource': name,
             'app': app,
@@ -116,7 +116,7 @@ def create_app(database='app.db'):
         api.add_resource(klass, f'/api/{name}')
 
         klass = type(f'HandlerSingle{name}', (Resource,), {
-            'get':  get_one_handler,
+            'get':  fetch_resource,
             'resource': name,
             'app': app,
         })
