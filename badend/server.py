@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from flask import Flask, Response, make_response
+from flask import Flask, Response, make_response, request
 from flask_restful import Api, Resource
 import json
 from .sqlite_db import SqliteDb as Db
@@ -7,14 +7,14 @@ from .sqlite_db import SqliteDb as Db
 
 def get_all_handler(self):
     resource = self.__class__.resource
-    db = Db(self.__class__.app)
+    db = Db(self.__class__.app.config['DATABASE'])
 
     data = []
 
     sql = f'SELECT * FROM {resource}'
 
     for record in db.execute(sql).fetchall():
-        data.append(format_resource_object(record, resource)['data'])
+        data.append(format_resource_object(record, resource, request.url_root)['data'])
 
     response = make_response({
         'data': data
@@ -25,7 +25,7 @@ def get_all_handler(self):
 
 def get_one_handler(self, id):
     resource = self.__class__.resource
-    db = Db(self.__class__.app)
+    db = Db(self.__class__.app.config['DATABASE'])
     sql = f'SELECT * FROM {resource} WHERE id={id}'
     result = db.execute(sql).fetchone()
 
@@ -38,9 +38,24 @@ def get_one_handler(self, id):
         })
         response.status_code = 404
     else:
-        response = make_response(format_resource_object(result, resource))
+        response = make_response(format_resource_object(result, resource, request.url_root))
         response.status_code = 200
 
+    response.headers['Content-Type'] = 'application/vnd.api+json'
+    return response
+
+
+def create_resource(self):
+    resource = self.__class__.resource
+    db = Db(self.__class__.app.config['DATABASE'])
+
+    id = db.insert_into(resource, request.get_json()['data']['attributes'])
+
+    sql = f'SELECT * FROM {resource} WHERE id={id}'
+    result = db.execute(sql).fetchone()
+
+    response = make_response(format_resource_object(result, resource, request.url_root))
+    response.status_code = 201
     response.headers['Content-Type'] = 'application/vnd.api+json'
     return response
 
@@ -60,7 +75,7 @@ def find_related(resource, id, db):
     return related
 
 
-def format_resource_object(record, resource):
+def format_resource_object(record, resource, url_root):
     data = {
         'type': resource,
         'id': record['id']
@@ -70,6 +85,10 @@ def format_resource_object(record, resource):
 
     for key in [key for key in record.keys() if key != 'id']:
         data['attributes'][key] = record[key]
+
+    data['links'] = {
+        'self': f'{url_root}api/{resource}/{record["id"]}'
+    }
 
     return {
         'data': data
@@ -88,7 +107,8 @@ def create_app(database='app.db'):
 
     for name in Db(app.config['DATABASE']).table_names:
         klass = type(f'HandlerList{name}', (Resource,), {
-            'get':  get_all_handler,
+            'get': get_all_handler,
+            'post': create_resource,
             'resource': name,
             'app': app,
         })

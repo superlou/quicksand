@@ -34,6 +34,9 @@ def test_get_one_resource(db_path):
             'attributes': {
                 'desc': 'some description',
                 'name': 'part1',
+            },
+            'links': {
+                'self': 'http://localhost/api/parts/1'
             }
         }
     }
@@ -47,9 +50,13 @@ def test_get_one_resource(db_path):
             'attributes': {
                 'desc': 'another description',
                 'name': 'part2',
+            },
+            'links': {
+                'self': 'http://localhost/api/parts/2'
             }
         }
     }
+
 
 def test_get_one_not_found(db_path):
     Db(db_path).execute_script('tests/sql/basic.sql')
@@ -63,6 +70,7 @@ def test_get_one_not_found(db_path):
             'detail': 'Resource "parts" with id "3" not found'
         }]
     }
+
 
 def test_get_all(db_path):
     Db(db_path).execute_script('tests/sql/basic.sql')
@@ -78,6 +86,9 @@ def test_get_all(db_path):
                 'attributes': {
                     'desc': 'some description',
                     'name': 'part1',
+                },
+                'links': {
+                    'self': 'http://localhost/api/parts/1'
                 }
             },
             {
@@ -86,8 +97,48 @@ def test_get_all(db_path):
                 'attributes': {
                     'desc': 'another description',
                     'name': 'part2',
+                },
+                'links': {
+                    'self': 'http://localhost/api/parts/2'
                 }
             },
 
         ]
     }
+
+
+def test_create_resource(db_path):
+    Db(db_path).execute_script('tests/sql/basic.sql')
+    app = create_app(db_path)
+    with app.test_client() as client:
+        response = client.get('/api/parts')
+        assert len(response.get_json(force=True)['data']) == 2
+
+        response = client.post('/api/parts', json={
+            'data': {
+                'type': 'parts',
+                'attributes': {
+                    'name': 'Just',
+                    'desc': 'Created',
+                }
+            }
+        })
+
+        assert response.headers['Content-Type'] == 'application/vnd.api+json'
+        assert response.status_code == 201
+        assert response.get_json(force=True) == {
+            'data': {
+                'type': 'parts',
+                'id': 3,
+                'attributes': {
+                    'name': 'Just',
+                    'desc': 'Created',
+                },
+                'links': {
+                    'self': 'http://localhost/api/parts/3'
+                }
+            }
+        }
+
+        response = client.get('/api/parts')
+        assert len(response.get_json(force=True)['data']) == 3
