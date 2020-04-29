@@ -1,18 +1,18 @@
 BEGIN TRANSACTION;
-DROP TABLE IF EXISTS `parts`;
-CREATE TABLE IF NOT EXISTS `parts` (
+DROP TABLE IF EXISTS `articles`;
+CREATE TABLE IF NOT EXISTS `articles` (
+	`id`	INTEGER NOT NULL,
+	`title`	TEXT,
+	`body`	TEXT,
+	PRIMARY KEY(`id`)
+);
+INSERT INTO `articles` VALUES (1,'Article 1','Body 1');
+INSERT INTO `articles` VALUES (2,'Article 2','Body 2');
+
+DROP TABLE IF EXISTS `authors`;
+CREATE TABLE IF NOT EXISTS `authors` (
 	`id`	INTEGER NOT NULL,
 	`name`	TEXT,
-	`desc`	text,
 	PRIMARY KEY(`id`)
 );
-INSERT INTO `parts` VALUES (1,'part1','some description');
-INSERT INTO `parts` VALUES (2,'part2','another description');
-DROP TABLE IF EXISTS `flight_controllers`;
-CREATE TABLE IF NOT EXISTS `flight_controllers` (
-	`id`	INTEGER NOT NULL,
-	`parts_id`	INTEGER UNIQUE,
-	PRIMARY KEY(`id`)
-);
-INSERT INTO `flight_controllers` VALUES (1,1);
 COMMIT;
