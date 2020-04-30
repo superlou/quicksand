@@ -62,3 +62,10 @@ def test_get_belongs_to(db_path):
             }
         }
     }
+
+    response = client.get('api/articles/2/author')
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'application/vnd.api+json'
+    assert response.get_json() == {
+        'data': None
+    }

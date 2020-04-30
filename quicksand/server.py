@@ -30,17 +30,22 @@ def fetch_resource(self, id):
     result = db.find_by_id(resource, id)
 
     if result is None:
-        response = make_response({
-            'errors': [{
-                'title': 'Resource not found',
-                'detail': f'Resource "{resource}" with id "{id}" not found'
-            }]
-        })
-        response.status_code = 404
-    else:
-        response = make_response(format_resource_object(result, resource, request.url_root, relationships))
-        response.status_code = 200
+        return response_not_found(resource, id)
 
+    response = make_response(format_resource_object(result, resource, request.url_root, relationships))
+    response.status_code = 200
+    response.headers['Content-Type'] = 'application/vnd.api+json'
+    return response
+
+
+def response_not_found(resource, id):
+    response = make_response({
+        'errors': [{
+            'title': 'Resource not found',
+            'detail': f'Resource "{resource}" with id "{id}" not found'
+        }]
+    })
+    response.status_code = 404
     response.headers['Content-Type'] = 'application/vnd.api+json'
     return response
 
@@ -87,18 +92,14 @@ def fetch_resource_relationship(self, id):
     result = db.find_by_id(related_resource, related_id)
 
     if result is None:
-        response = make_response({
-            'errors': [{
-                'title': 'Resource not found',
-                'detail': f'Resource "{resource}" with id "{id}" not found'
-            }]
-        })
-        response.status_code = 404
-    else:
-        relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
-        response = make_response(format_resource_object(result, related_resource, request.url_root, relationships))
+        response = make_response({'data': None})
         response.status_code = 200
+        response.headers['Content-Type'] = 'application/vnd.api+json'
+        return response
 
+    relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
+    response = make_response(format_resource_object(result, related_resource, request.url_root, relationships))
+    response.status_code = 200
     response.headers['Content-Type'] = 'application/vnd.api+json'
     return response
 
