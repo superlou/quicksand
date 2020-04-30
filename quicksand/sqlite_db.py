@@ -72,3 +72,7 @@ class SqliteDb:
 
     def get_table_info(self, name):
         return self.cursor.execute(f'PRAGMA table_info({name})').fetchall()
+
+    def table_columns(self, name):
+        rows = self.cursor.execute(f'PRAGMA table_info({name})').fetchall()
+        return [row['name'] for row in rows]

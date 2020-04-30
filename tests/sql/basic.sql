@@ -4,10 +4,10 @@ CREATE TABLE IF NOT EXISTS `articles` (
 	`id`	INTEGER NOT NULL,
 	`title`	TEXT,
 	`body`	TEXT,
-	PRIMARY KEY(`id`)
+	`author_id` INTEGER,
+	PRIMARY KEY(`id`),
+	FOREIGN KEY (author_id) REFERENCES authors(id)
 );
-INSERT INTO `articles` VALUES (1,'Article 1','Body 1');
-INSERT INTO `articles` VALUES (2,'Article 2','Body 2');
 
 DROP TABLE IF EXISTS `authors`;
 CREATE TABLE IF NOT EXISTS `authors` (
@@ -15,4 +15,8 @@ CREATE TABLE IF NOT EXISTS `authors` (
 	`name`	TEXT,
 	PRIMARY KEY(`id`)
 );
+
+INSERT INTO 'authors' VALUES (1,'Author 1');
+INSERT INTO `articles` VALUES (1,'Article 1','Body 1',1);
+INSERT INTO `articles` VALUES (2,'Article 2','Body 2', null);
 COMMIT;
