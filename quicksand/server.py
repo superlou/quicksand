@@ -6,6 +6,7 @@ import json
 import inflect
 from .sqlite_db import SqliteDb as Db
 from .relationships import infer_relationships
+from .url_map_display import format_url_map
 
 
 def fetch_resources(self):
@@ -132,22 +133,6 @@ def format_resource_object(record, resource, url_root, relationships):
     return {
         'data': data
     }
-
-
-def format_url_map(url_map):
-    rules = list(url_map.iter_rules())
-    rules = sorted(rules, key=lambda rule: str(rule))
-
-    html = '<ul>'
-
-    for rule in rules:
-        methods = ', '.join(list(rule.methods))
-        path = flask.escape(rule.rule)
-        html += f'<li>{path} - {methods}</li>'
-
-    html += '</ul>'
-
-    return html
 
 
 def create_app(database='app.db'):
