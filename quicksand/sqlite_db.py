@@ -32,6 +32,7 @@ class SqliteDb:
         values = tuple(attributes.values())
         templates = ','.join('?' * len(values))
 
+        # todo Most queries, including this one, are not fully sanitized
         sql = f'INSERT INTO {table} ({columns}) VALUES ({templates});'
         self.execute(sql, values)
         self.commit()
@@ -59,6 +60,12 @@ class SqliteDb:
         sql = f'SELECT * FROM {table} WHERE id=?'
         record = self.execute(sql, [id]).fetchone()
         return record
+
+    def find_by_field(self, table, field, id):
+        sql = f'SELECT * FROM {table} WHERE {field}=?'
+        print(sql)
+        records = self.execute(sql, [id]).fetchall()
+        return records
 
     def delete_by_id(self, table, id):
         sql = f'DELETE from {table} WHERE id=?;'

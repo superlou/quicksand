@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS `authors` (
 
 INSERT INTO 'authors' VALUES (1,'Author 1');
 INSERT INTO `articles` VALUES (1,'Article 1','Body 1',1);
-INSERT INTO `articles` VALUES (2,'Article 2','Body 2', null);
+INSERT INTO `articles` VALUES (2,'Article 2','Body 2',null);
 COMMIT;

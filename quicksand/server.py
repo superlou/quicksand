@@ -88,19 +88,40 @@ def fetch_resource_relationship(self, id):
 
     if relationship_type == 'belongs_to':
         related_resource = ie.plural(relationship_name)
-        related_id = db.find_by_id(resource, id)[relationship_name + '_id']
+        relationship_column = relationship_name + '_id'
+        related_id = db.find_by_id(resource, id)[relationship_column]
+        result = db.find_by_id(related_resource, related_id)
 
-    result = db.find_by_id(related_resource, related_id)
+        if result is None:
+            response = make_response({'data': None})
+            response.status_code = 200
+            response.headers['Content-Type'] = 'application/vnd.api+json'
+            return response
 
-    if result is None:
-        response = make_response({'data': None})
-        response.status_code = 200
-        response.headers['Content-Type'] = 'application/vnd.api+json'
-        return response
+        relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
+        response = make_response(format_resource_object(result, related_resource, request.url_root, relationships))
 
-    relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
-    response = make_response(format_resource_object(result, related_resource, request.url_root, relationships))
-    response.status_code = 200
+    elif relationship_type == 'has_many':
+        # Example: authors/1/articles
+        # author has many articles, with article_id in author
+        related_resource = relationship_name                        # articles
+        relationship_column = ie.singular_noun(resource) + '_id'    # author_id
+        result = db.find_by_field(related_resource, relationship_column, id)
+
+        if len(result) == 0:
+            response = make_response({'data': []})
+            response.status_code = 200
+            response.headers['Content-Type'] = 'application/vnd.api+json'
+            return response
+
+        relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
+        data = [format_resource_object(record, related_resource, request.url_root, relationships)['data']
+                for record in result]
+
+        response = make_response({
+            'data': data
+        })
+
     response.headers['Content-Type'] = 'application/vnd.api+json'
     return response
 
