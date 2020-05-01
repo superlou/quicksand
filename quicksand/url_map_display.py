@@ -1,36 +1,24 @@
 import flask
+from flask import render_template
 
 
-def format_url_map(url_map):
+def render_url_map(url_map):
     rules = list(url_map.iter_rules())
     rules = sorted(rules, key=lambda rule: str(rule))
 
-    html = '<table border=1>'
-
     methods = ['GET', 'POST', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
 
-    html += '<tr><td></td>'
-    for method in methods:
-        html += f'<td>{method}</td>'
-
-    html += '</tr>'
+    rule_rows = []
 
     for rule in rules:
-        path = flask.escape(rule.rule)
-
-        html += "<tr>"
-        # methods = ', '.join(list(rule.methods))
-        html += f'<td>{path}</td>'
+        row = [flask.escape(rule.rule)]
 
         for method in methods:
-            html += "<td>"
             if method in rule.methods:
-                html += "&#x2713;"
+                row.append("&#x2713;")
+            else:
+                row.append('')
 
-            html += "</td>"
+        rule_rows.append(row)
 
-        html += "</tr>"
-
-    html += '</table>'
-
-    return html
+    return render_template('url_map.html', methods=methods, rows=rule_rows)

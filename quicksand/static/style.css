@@ -1,0 +1,30 @@
+body {
+  font-family: sans-serif;
+}
+
+table {
+  border-collapse: collapse;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+table th {
+  background: #602020;
+  color: white;
+  font-weight: normal;
+}
+
+table tr td, table tr th {
+  padding: 0.5em 0.8em;
+}
+
+table tr {
+  background: #f0f0f0;
+}
+
+table tr:nth-of-type(odd) {
+  background: #fafafa;
+}
+
+table tr td.center {
+  text-align: center;
+}

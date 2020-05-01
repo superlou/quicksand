@@ -6,7 +6,7 @@ import json
 import inflect
 from .sqlite_db import SqliteDb as Db
 from .relationships import infer_relationships
-from .url_map_display import format_url_map
+from .url_map_display import render_url_map
 from .relationships import BelongsTo, HasMany
 from .jsonapi import make_null_relationship_response, make_empty_relationship_response
 from .jsonapi import make_jsonapi_response
@@ -142,7 +142,7 @@ def create_app(database='app.db'):
 
     @app.route('/')
     def index():
-        return '<h1>Quicksand Server</h1>\n' + format_url_map(app.url_map)
+        return render_url_map(app.url_map)
 
     for name in Db(app.config['DATABASE']).table_names:
         klass = type(f'HandlerList{name}', (Resource,), {

@@ -1,0 +1,35 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+  <meta charset="utf-8">
+  <title>Quicksand</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <h1>Quicksand Backend</h1>
+  <div>
+    <table>
+      <tr>
+        <th>Path</th>
+        {% for method in methods %}
+          <th>{{method}}</th>
+        {% endfor %}
+      </tr>
+      {% for row in rows %}
+        <tr>
+          {% for column in row %}
+            <td class="{{'center' if not loop.first}}">{{ column | safe }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+</body>
+
+</html>
