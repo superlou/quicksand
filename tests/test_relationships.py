@@ -1,7 +1,7 @@
 import os
 import tempfile
 import pytest
-from quicksand import create_app, Db
+from quicksand import create_app, Db, BelongsTo, HasMany
 
 
 @pytest.fixture
@@ -12,17 +12,31 @@ def db_path():
     os.unlink(db_path)
 
 
+def test_relationship_classes():
+    belongsTo = BelongsTo('articles', 'author')
+    assert belongsTo.name == 'author'
+    assert belongsTo.related_resource == 'authors'
+    assert belongsTo.lookup_table == 'authors'
+    assert belongsTo.lookup_id == 'id'
+
+    hasMany = HasMany('authors', 'articles')
+    assert hasMany.name == 'articles'
+    assert hasMany.related_resource == 'articles'
+    assert hasMany.lookup_table == 'articles'
+    assert hasMany.lookup_id == 'author_id'
+
+
 def test_relationships_inference(db_path):
     Db(db_path).execute_script('tests/sql/basic.sql')
     app = create_app(db_path)
-    assert app.config['RELATIONSHIPS'] == {
-        'articles': [
-            ('belongs_to', 'author')
-        ],
-        'authors': [
-            ('has_many', 'articles')
-        ]
-    }
+
+    assert app.config['RELATIONSHIPS']['articles'] == [
+        BelongsTo('articles', 'author')
+    ]
+
+    assert app.config['RELATIONSHIPS']['authors'] == [
+        HasMany('authors', 'articles')
+    ]
 
 
 def test_get_belongs_to(db_path):

@@ -1,27 +1,24 @@
 #!/usr/bin/python3
 import flask
-from flask import Flask, Response, make_response, request
+from flask import Flask, Response, request
 from flask_restful import Api, Resource
 import json
 import inflect
 from .sqlite_db import SqliteDb as Db
 from .relationships import infer_relationships
 from .url_map_display import format_url_map
+from .relationships import BelongsTo, HasMany
+from .jsonapi import make_null_relationship_response, make_empty_relationship_response
+from .jsonapi import make_jsonapi_response
 
 
 def fetch_resources(self):
     resource = self.__class__.resource
     relationships = self.__class__.relationships
     db = Db(self.__class__.app.config['DATABASE'])
-
-    data = [format_resource_object(record, resource, request.url_root, relationships)['data']
-            for record in db.find_all(resource)]
-
-    response = make_response({
-        'data': data
-    })
-    response.headers['Content-Type'] = 'application/vnd.api+json'
-    return response
+    records = db.find_all(resource)
+    obj = format_resource_object(records, resource, request.url_root, relationships)
+    return make_jsonapi_response(obj)
 
 
 def fetch_resource(self, id):
@@ -33,22 +30,18 @@ def fetch_resource(self, id):
     if result is None:
         return response_not_found(resource, id)
 
-    response = make_response(format_resource_object(result, resource, request.url_root, relationships))
-    response.status_code = 200
-    response.headers['Content-Type'] = 'application/vnd.api+json'
-    return response
+    obj = format_resource_object(result, resource, request.url_root, relationships)
+    return make_jsonapi_response(obj)
 
 
 def response_not_found(resource, id):
-    response = make_response({
+    obj = {
         'errors': [{
             'title': 'Resource not found',
             'detail': f'Resource "{resource}" with id "{id}" not found'
         }]
-    })
-    response.status_code = 404
-    response.headers['Content-Type'] = 'application/vnd.api+json'
-    return response
+    }
+    return make_jsonapi_response(obj, 404)
 
 
 def create_resource(self):
@@ -58,10 +51,8 @@ def create_resource(self):
     id = db.insert_into(resource, request.get_json()['data']['attributes'])
 
     result = db.find_by_id(resource, id)
-    response = make_response(format_resource_object(result, resource, request.url_root, relationships))
-    response.status_code = 201
-    response.headers['Content-Type'] = 'application/vnd.api+json'
-    return response
+    obj = format_resource_object(result, resource, request.url_root, relationships)
+    return make_jsonapi_response(obj, 201)
 
 
 def delete_resource(self, id):
@@ -80,53 +71,38 @@ def update_resource(self, id):
 
 def fetch_resource_relationship(self, id):
     resource = self.__class__.resource
-    relationship_type = self.__class__.relationship_type
-    relationship_name = self.__class__.relationship_name
+    relationship = self.__class__.relationship
+    related_resource = relationship.related_resource
     db = Db(self.__class__.app.config['DATABASE'])
 
-    ie = inflect.engine()
-
-    if relationship_type == 'belongs_to':
-        related_resource = ie.plural(relationship_name)
-        relationship_column = relationship_name + '_id'
+    if isinstance(relationship, BelongsTo):
+        relationship_column = relationship.name + '_id'
         related_id = db.find_by_id(resource, id)[relationship_column]
-        result = db.find_by_id(related_resource, related_id)
+        result = db.find_by_id(relationship.lookup_table, related_id)
 
         if result is None:
-            response = make_response({'data': None})
-            response.status_code = 200
-            response.headers['Content-Type'] = 'application/vnd.api+json'
-            return response
+            return make_null_relationship_response()
 
-        relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
-        response = make_response(format_resource_object(result, related_resource, request.url_root, relationships))
-
-    elif relationship_type == 'has_many':
-        # Example: authors/1/articles
-        # author has many articles, with article_id in author
-        related_resource = relationship_name                        # articles
-        relationship_column = ie.singular_noun(resource) + '_id'    # author_id
-        result = db.find_by_field(related_resource, relationship_column, id)
+    elif isinstance(relationship, HasMany):
+        result = db.find_by_field(related_resource, relationship.lookup_id, id)
 
         if len(result) == 0:
-            response = make_response({'data': []})
-            response.status_code = 200
-            response.headers['Content-Type'] = 'application/vnd.api+json'
-            return response
+            return make_empty_relationship_response()
 
-        relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
-        data = [format_resource_object(record, related_resource, request.url_root, relationships)['data']
-                for record in result]
-
-        response = make_response({
-            'data': data
-        })
-
-    response.headers['Content-Type'] = 'application/vnd.api+json'
-    return response
+    relationships = self.__class__.app.config['RELATIONSHIPS'][related_resource]
+    obj = format_resource_object(result, related_resource, request.url_root, relationships)
+    return make_jsonapi_response(obj)
 
 
 def format_resource_object(record, resource, url_root, relationships):
+    """ Formats a single or list of records into a resource object """
+    if isinstance(record, list):
+        records = record
+        data = [format_resource_object(record, resource, url_root,
+                                       relationships)['data']
+                for record in records]
+        return {'data': data}
+
     data = {
         'type': resource,
         'id': record['id']
@@ -142,13 +118,14 @@ def format_resource_object(record, resource, url_root, relationships):
     }
 
     if len(relationships) > 0:
+        id = record['id']
         data['relationships'] = {
-            name: {
+            rel.name: {
                 'links': {
-                    'related': f'{url_root}api/{resource}/{record["id"]}/{name}'
+                    'related': f'{url_root}api/{resource}/{id}/{rel.name}'
                 }
             }
-            for relationship_type, name in relationships
+            for rel in relationships
         }
 
     return {
@@ -189,15 +166,14 @@ def create_app(database='app.db'):
 
         api.add_resource(klass, f'/api/{name}/<int:id>')
 
-        for relationship_type, relationship_name in app.config['RELATIONSHIPS'][name]:
-            klass = type(f'HandlerSingle{name}_{relationship_name}', (Resource,), {
+        for relationship in app.config['RELATIONSHIPS'][name]:
+            klass = type(f'HandlerSingle{name}_{relationship.name}', (Resource,), {
                 'get':  fetch_resource_relationship,
                 'resource': name,
                 'app': app,
                 'relationships': app.config['RELATIONSHIPS'][name],
-                'relationship_type': relationship_type,
-                'relationship_name': relationship_name,
+                'relationship': relationship,
             })
-            api.add_resource(klass, f'/api/{name}/<int:id>/{relationship_name}')
+            api.add_resource(klass, f'/api/{name}/<int:id>/{relationship.name}')
 
     return app
