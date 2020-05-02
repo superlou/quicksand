@@ -14,3 +14,5 @@ Create a backend based on your database schema.
 Every table is a resource.
 
 Every column that isn't `id` is an attribute.
+
+If a column name ends with `_id`, it is the "belongs to" half of a 1-to-many relationship. For example, if the `authors` resource has many `articles`, than the `articles` table needs to have an `author_id` column.
