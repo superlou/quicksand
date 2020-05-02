@@ -48,7 +48,39 @@ def create_resource(self):
     resource = self.__class__.resource
     relationships = self.__class__.relationships
     db = Db(self.__class__.app.config['DATABASE'])
-    id = db.insert_into(resource, request.get_json()['data']['attributes'])
+
+    request_data = request.get_json()['data']
+    record_data = request_data['attributes']
+
+    # Modify the created resource's table
+    belongs_to_rels = [r for r in relationships if isinstance(r, BelongsTo)]
+    for relationship in belongs_to_rels:
+        try:
+            rel_data = request_data['relationships'][relationship.name]['data']
+            rel_resource_type = rel_data['type']
+            rel_id = rel_data['id']
+        except KeyError:
+            continue
+
+        if rel_resource_type != relationship.related_resource:
+            continue
+
+        record_data[relationship.name + '_id'] = rel_id
+
+    id = db.insert_into(resource, record_data)
+
+    # Modify fields in related tables
+    has_many_rels = [r for r in relationships if isinstance(r, HasMany)]
+    for relationship in has_many_rels:
+        try:
+            rel_datas = request_data['relationships'][relationship.name]['data']
+            for rel_data in rel_datas:
+                db.update_by_id(relationship.lookup_table, rel_data['id'], {
+                    relationship.lookup_id: id
+                })
+        except KeyError:
+            continue
+
 
     result = db.find_by_id(resource, id)
     obj = format_resource_object(result, resource, request.url_root, relationships)

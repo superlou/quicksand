@@ -34,13 +34,6 @@ def test_get_one_resource(db_path):
             },
             'links': {
                 'self': 'http://localhost/api/articles/1'
-            },
-            'relationships': {
-                'author': {
-                    'links': {
-                        'related': 'http://localhost/api/articles/1/author'
-                    }
-                }
             }
         }
     }
@@ -57,13 +50,6 @@ def test_get_one_resource(db_path):
             },
             'links': {
                 'self': 'http://localhost/api/articles/2'
-            },
-            'relationships': {
-                'author': {
-                    'links': {
-                        'related': 'http://localhost/api/articles/2/author'
-                    }
-                }
             }
         }
     }
@@ -100,13 +86,6 @@ def test_get_all(db_path):
                 },
                 'links': {
                     'self': 'http://localhost/api/articles/1'
-                },
-                'relationships': {
-                    'author': {
-                        'links': {
-                            'related': 'http://localhost/api/articles/1/author'
-                        }
-                    }
                 }
             },
             {
@@ -118,13 +97,6 @@ def test_get_all(db_path):
                 },
                 'links': {
                     'self': 'http://localhost/api/articles/2'
-                },
-                'relationships': {
-                    'author': {
-                        'links': {
-                            'related': 'http://localhost/api/articles/2/author'
-                        }
-                    }
                 }
             },
         ]
@@ -159,13 +131,6 @@ def test_create_resource(db_path):
             },
             'links': {
                 'self': 'http://localhost/api/articles/3'
-            },
-            'relationships': {
-                'author': {
-                    'links': {
-                        'related': 'http://localhost/api/articles/3/author'
-                    }
-                }
             }
         }
     }
